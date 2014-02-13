@@ -329,47 +329,22 @@
      * @memberof Kinetic.Filters
      * @param {Object} imageData
      */
+    Kinetic.Filters.Blur = function(imageData) {
+        var radius = this.blurRadius() | 0;
 
-    var Blur = function(src,dst,opt){
-        var radius = opt.filterRadius | 0;
-
-        // If a different desntination image data is supplied
-        // copy the source and perform the blur on the destination
-        var i;
-        if( dst !== src ){
-            i = src.data.length;
-            while( i-- ){
-                dst.data[i] = src.data[i];
-            }
-        }
-
-        if( radius > 0 ){
-            filterGaussBlurRGBA(dst,radius);
+        if (radius > 0) {
+            filterGaussBlurRGBA(imageData, radius);
         }
     };
-    Kinetic.Filters.Blur = function(src,dst,opt){
-      if( this === Kinetic.Filters ){
-        Blur(src, dst||src, opt );
-      }else{
-        Blur.call(this, src, dst||src, opt || {
-          filterRadius: this.getFilterRadius()
-        });
-      }
-    };
 
-    Kinetic.Factory.addFilterGetterSetter(Kinetic.Image, 'filterRadius', 0);
+    Kinetic.Factory.addGetterSetter(Kinetic.Node, 'blurRadius', 0, null, Kinetic.Factory.afterSetFilter);
 
     /**
-    * get filter radius.  Returns the radius for Gaussian blur filter.
-    * @name getFilterRadius
+    * get/set blur radius
+    * @name blurRadius
     * @method
-    * @memberof Kinetic.Image.prototype
-    */
-
-    /**
-    * get filter radius.  Set the radius for Gaussian blur filter.
-    * @name setFilterRadius
-    * @method
-    * @memberof Kinetic.Image.prototype
+    * @memberof Kinetic.Node.prototype
+    * @param {Integer} radius
+    * @returns {Integer}
     */
 })();

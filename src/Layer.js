@@ -96,8 +96,9 @@
                 return {};
             }
         },
-        drawScene: function(canvas) {
-            canvas = canvas || this.getCanvas();
+        drawScene: function(can) {
+            var layer = this.getLayer(),
+                canvas = can || (layer && layer.getCanvas());
 
             this._fire(BEFORE_DRAW, {
                 node: this
@@ -115,20 +116,21 @@
 
             return this;
         },
-        drawHit: function() {
-            var layer = this.getLayer();
+        drawHit: function(can) {
+            var layer = this.getLayer(),
+                canvas = can || (layer && layer.hitCanvas);
 
             if(layer && layer.getClearBeforeDraw()) {
                 layer.getHitCanvas().getContext().clear();
             }
 
-            Kinetic.Container.prototype.drawHit.call(this);
+            Kinetic.Container.prototype.drawHit.call(this, canvas);
             return this;
         },
         /**
          * get layer canvas
          * @method
-         * @memberof Kinetic.Node.prototype
+         * @memberof Kinetic.Layer.prototype
          */
         getCanvas: function() {
             return this.canvas;
@@ -136,7 +138,7 @@
         /**
          * get layer hit canvas
          * @method
-         * @memberof Kinetic.Node.prototype
+         * @memberof Kinetic.Layer.prototype
          */
         getHitCanvas: function() {
             return this.hitCanvas;
@@ -144,7 +146,7 @@
         /**
          * get layer canvas context
          * @method
-         * @memberof Kinetic.Node.prototype
+         * @memberof Kinetic.Layer.prototype
          */
         getContext: function() {
             return this.getCanvas().getContext();
@@ -291,44 +293,45 @@
 
     // add getters and setters
     Kinetic.Factory.addGetterSetter(Kinetic.Layer, 'clearBeforeDraw', true);
-
     /**
-     * set flag which determines if the layer is cleared or not
+     * get/set clearBeforeDraw flag which determines if the layer is cleared or not
      *  before drawing
-     * @name setClearBeforeDraw
+     * @name clearBeforeDraw
      * @method
      * @memberof Kinetic.Layer.prototype
      * @param {Boolean} clearBeforeDraw
-     * @returns {Node}
-     */
-
-    /**
-     * get flag which determines if the layer is cleared or not
-     *  before drawing
-     * @name getClearBeforeDraw
-     * @method
-     * @memberof Kinetic.Layer.prototype
      * @returns {Boolean}
+     * @example
+     * // get clearBeforeDraw flag<br>
+     * var clearBeforeDraw = layer.clearBeforeDraw();<br><br>
+     *
+     * // disable clear before draw<br>
+     * layer.clearBeforeDraw(false);<br><br>
+     *
+     * // enable clear before draw<br>
+     * layer.clearBeforeDraw(true);
      */
 
     Kinetic.Factory.addGetterSetter(Kinetic.Layer, 'hitGraphEnabled', true);
-
     /**
-     * enable/disable hit graph
-     * @name setHitGraphEnabled
+     * get/set hitGraphEnabled flag.  Disabling the hit graph will greatly increase
+     *  draw performance because the hit graph will not be redrawn each time the layer is
+     *  drawn.  This, however, also disables mouse/touch event detection
+     * @name hitGraphEnabled
      * @method
      * @memberof Kinetic.Layer.prototype
      * @param {Boolean} enabled
-     * @returns {Node}
-     */
-
-    /**
-     * determine if hit graph is enabled
-     * @name getHitGraphEnabled
-     * @method
-     * @memberof Kinetic.Layer.prototype
      * @returns {Boolean}
+     * @example
+     * // get hitGraphEnabled flag<br>
+     * var hitGraphEnabled = layer.hitGraphEnabled();<br><br>
+     *
+     * // disable hit graph<br>
+     * layer.hitGraphEnabled(false);<br><br>
+     *
+     * // enable hit graph<br>
+     * layer.hitGraphEnabled(true);
      */
 
-     Kinetic.Layer.prototype.isHitGraphEnabled = Kinetic.Layer.prototype.getHitGraphEnabled;
+     Kinetic.Collection.mapMethods(Kinetic.Layer);
 })();

@@ -223,7 +223,7 @@
                 this.setAttr('lineJoin', lineJoin);
             }
         },
-        _applyAncestorTransforms: function(shape) {
+        _applyTransform: function(shape) {
             var transformsEnabled = shape.getTransformsEnabled(),
                 m;
 
@@ -234,25 +234,8 @@
             else if (transformsEnabled === 'position') {
                 // best performance for position only transforms
                 this.translate(shape.getX(), shape.getY());
-            }
-            
+            }  
         },
-        _clip: function(container) {
-            var clipX = container.getClipX(),
-                clipY = container.getClipY(),
-                clipWidth = container.getClipWidth(),
-                clipHeight = container.getClipHeight();
-
-            this.save();
-            this._applyAncestorTransforms(container);
-            this.beginPath();
-            this.rect(clipX, clipY, clipWidth, clipHeight);
-            this.clip();
-            this.reset();
-            container._drawChildren(this.getCanvas());
-            this.restore();
-        },
-
         setAttr: function(attr, val) {
             this._context[attr] = val;
         },
@@ -441,7 +424,13 @@
 
     Kinetic.SceneContext.prototype = {
         _fillColor: function(shape) {
-            var fill = shape.getFill();
+            var fill = shape.fill()   
+                || Kinetic.Util._getRGBAString({
+                    red: shape.fillRed(), 
+                    green: shape.fillGreen(), 
+                    blue: shape.fillBlue(),
+                    alpha: shape.fillAlpha()
+                });
 
             this.setAttr('fillStyle', fill);
             shape._fillFunc(this);
@@ -502,7 +491,7 @@
             this.fill();
         },
         _fill: function(shape) {
-            var hasColor = shape.getFill(),
+            var hasColor = shape.fill() || shape.fillRed() || shape.fillGreen() || shape.fillBlue(),
                 hasPattern = shape.getFillPatternImage(),
                 hasLinearGradient = shape.getFillLinearGradientColorStops(),
                 hasRadialGradient = shape.getFillRadialGradientColorStops(),
@@ -536,9 +525,7 @@
             }
         },
         _stroke: function(shape) {
-            var stroke = shape.getStroke(),
-                strokeWidth = shape.getStrokeWidth(),
-                dashArray = shape.getDashArray(),
+            var dash = shape.dash(),
                 strokeScaleEnabled = shape.getStrokeScaleEnabled();
 
             if(shape.hasStroke()) {
@@ -547,14 +534,20 @@
                     this.setTransform(1, 0, 0, 1, 0, 0);
                 }
 
-                /////////////////////
                 this._applyLineCap(shape);
-                if(dashArray && shape.getDashArrayEnabled()) {
-                    this.setLineDash(dashArray);
+                if(dash && shape.dashEnabled()) {
+                    this.setLineDash(dash);
                 }
 
-                this.setAttr('lineWidth', strokeWidth || 2);
-                this.setAttr('strokeStyle', stroke || 'black');
+                this.setAttr('lineWidth', shape.strokeWidth());
+                this.setAttr('strokeStyle', shape.stroke() 
+                    || Kinetic.Util._getRGBAString({
+                        red: shape.strokeRed(), 
+                        green: shape.strokeGreen(), 
+                        blue: shape.strokeBlue(),
+                        alpha: shape.strokeAlpha()
+                    }));
+
                 shape._strokeFunc(this);
                 
                 if (!strokeScaleEnabled) {
@@ -598,12 +591,9 @@
             this.restore();
         },
         _stroke: function(shape) {
-            var stroke = shape.getStroke(),
-                strokeWidth = shape.getStrokeWidth();
-
-            if(stroke || strokeWidth) {
+            if(shape.hasStroke()) {
                 this._applyLineCap(shape);
-                this.setAttr('lineWidth', strokeWidth || 2);
+                this.setAttr('lineWidth', shape.strokeWidth());
                 this.setAttr('strokeStyle', shape.colorKey);
                 shape._strokeFuncHit(this);
             }

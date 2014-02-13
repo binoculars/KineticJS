@@ -16,6 +16,7 @@
          * determine if node has children
          * @method
          * @memberof Kinetic.Container.prototype
+         * @returns {Boolean}
          */
         hasChildren: function() {
             return this.getChildren().length > 0;
@@ -56,6 +57,7 @@
          * @method
          * @memberof Kinetic.Container.prototype
          * @param {Node} child
+         * @returns {Container}
          */
         add: function(child) {
             var children = this.children;
@@ -86,6 +88,7 @@
          * @method
          * @memberof Kinetic.Container.prototype
          * @param {String} selector
+         * @returns {Collection}
          * @example
          * // select node with id foo<br>
          * var node = stage.find('#foo');<br><br>
@@ -238,57 +241,66 @@
                 child.index = n;
             });
         },
-        drawScene: function(canvas) {
+        drawScene: function(can) {
             var layer = this.getLayer(),
-                clip = this.getClipWidth() && this.getClipHeight(),
-                children, n, len;
+                canvas = can || (layer && layer.getCanvas()),
+                context = canvas && canvas.getContext(),
+                cachedCanvas = this._cache.canvas,
+                cachedSceneCanvas = cachedCanvas && cachedCanvas.scene;
 
-            // if (!canvas && layer) {
-            //     canvas = layer.getCanvas();
-            // }
-
-            if(this.isVisible()) {
-                if (clip) {
-                    canvas.getContext()._clip(this);
+            if (this.isVisible()) {
+                if (cachedSceneCanvas) {
+                    this._drawCachedSceneCanvas(context);
                 }
                 else {
-                    this._drawChildren(canvas);
+                    this._drawChildren(canvas, 'drawScene');
                 }
             }
-
             return this;
         },
-        _drawChildren: function(canvas) {
+        drawHit: function(can) {
+            var layer = this.getLayer(),
+                canvas = can || (layer && layer.hitCanvas),
+                context = canvas && canvas.getContext(),
+                cachedCanvas = this._cache.canvas,
+                cachedHitCanvas = cachedCanvas && cachedCanvas.hit;
+
+            if (this.shouldDrawHit()) {
+                if (cachedHitCanvas) {
+                    this._drawCachedHitCanvas(context);
+                }
+                else {
+                    this._drawChildren(canvas, 'drawHit');
+                }
+            }
+            return this;
+        },
+        _drawChildren: function(canvas, drawMethod) {
+            var context = canvas && canvas.getContext(),
+                clipWidth = this.getClipWidth(),
+                clipHeight = this.getClipHeight(),
+                hasClip = clipWidth && clipHeight,
+                clipX, clipY;
+
+            if (hasClip) {
+                clipX = this.getClipX();
+                clipY = this.getClipY();
+
+                context.save();
+                context._applyTransform(this);
+                context.beginPath();
+                context.rect(clipX, clipY, clipWidth, clipHeight);
+                context.clip();
+                context.reset();   
+            }
+
             this.children.each(function(child) {
-                child.drawScene(canvas);
+                child[drawMethod](canvas);
             });
-        },
-        drawHit: function() {
-            var hasClip = this.getClipWidth() && this.getClipHeight() && this.nodeType !== 'Stage',
-                n = 0,
-                len = 0,
-                children = [],
-                hitCanvas;
 
-            if(this.shouldDrawHit()) {
-
-                if (hasClip) {
-                    hitCanvas = this.getLayer().hitCanvas;
-                    hitCanvas.getContext()._clip(this);
-                }
-
-                children = this.children;
-                len = children.length;
-
-                for(n = 0; n < len; n++) {
-                    children[n].drawHit();
-                }
-                if (hasClip) {
-                    hitCanvas.getContext()._context.restore();
-                }
+            if (hasClip) {
+                context.restore();
             }
-
-            return this;
         }
     });
 
@@ -297,17 +309,24 @@
     Kinetic.Container.prototype.get = Kinetic.Container.prototype.find;
 
     // add getters setters
-    Kinetic.Factory.addBoxGetterSetter(Kinetic.Container, 'clip');
-
+    Kinetic.Factory.addComponentsGetterSetter(Kinetic.Container, 'clip', ['x', 'y', 'width', 'height']);
     /**
-     * set clip
+     * get/set clip
      * @method
-     * @name setClip
+     * @name clip
      * @memberof Kinetic.Container.prototype
-     * @param {Object} clip {x:x, y:y, width:width, height:height}
+     * @param {Object} clip
+     * @param {Number} clip.x
+     * @param {Number} clip.y
+     * @param {Number} clip.width
+     * @param {Number} clip.height
+     * @returns {Object}
      * @example
-     * // set clip x, y, width and height<br>
-     * image.setClip({<br>
+     * // get clip<br>
+     * var clip = container.clip();<br><br>
+     *
+     * // set clip<br>
+     * container.setClip({<br>
      *   x: 20,<br>
      *   y: 20,<br>
      *   width: 20,<br>
@@ -315,79 +334,69 @@
      * });
      */
 
+    Kinetic.Factory.addGetterSetter(Kinetic.Container, 'clipX');
     /**
-     * get clip
-     * @name getClip
+     * get/set clip x
+     * @name clipX
      * @method
-     * @memberof Kinetic.Container.prototype
-     * @returns {Object}
-     */
-
-    Kinetic.Factory.addGetterSetter(Kinetic.Container, 'clipX', 0);
-     /**
-     * set clip x
-     * @method
-     * @name setClipX
      * @memberof Kinetic.Container.prototype
      * @param {Number} x
-     */
-
-    /**
-     * get clip x
-     * @name getClipX
-     * @method
-     * @memberof Kinetic.Container.prototype
      * @returns {Number}
+     * @example
+     * // get clip x<br>
+     * var clipX = container.clipX();<br><br>
+     *
+     * // set clip x<br>
+     * container.clipX(10);
      */
 
-     Kinetic.Factory.addGetterSetter(Kinetic.Container, 'clipY', 0);
-     /**
-     * set clip y
-     * @name setClipY
+    Kinetic.Factory.addGetterSetter(Kinetic.Container, 'clipY');
+    /**
+     * get/set clip y
+     * @name clipY
      * @method
      * @memberof Kinetic.Container.prototype
      * @param {Number} y
-     */
-
-    /**
-     * get clip y
-     * @name getClipY
-     * @method
-     * @memberof Kinetic.Container.prototype
      * @returns {Number}
+     * @example
+     * // get clip y<br>
+     * var clipY = container.clipY();<br><br>
+     *
+     * // set clip y<br>
+     * container.clipY(10);
      */
 
-     Kinetic.Factory.addGetterSetter(Kinetic.Container, 'clipWidth', 0);
-     /**
-     * set clip width
-     * @name setClipWidth
+    Kinetic.Factory.addGetterSetter(Kinetic.Container, 'clipWidth');
+    /**
+     * get/set clip width
+     * @name clipWidth
      * @method
      * @memberof Kinetic.Container.prototype
      * @param {Number} width
-     */
-
-    /**
-     * get clip width
-     * @name getClipWidth
-     * @method
-     * @memberof Kinetic.Container.prototype
      * @returns {Number}
+     * @example
+     * // get clip width<br>
+     * var clipWidth = container.clipWidth();<br><br>
+     *
+     * // set clip width<br>
+     * container.clipWidth(100);
      */
 
-     Kinetic.Factory.addGetterSetter(Kinetic.Container, 'clipHeight', 0);
-     /**
-     * set clip height
-     * @name setClipHeight
+    Kinetic.Factory.addGetterSetter(Kinetic.Container, 'clipHeight');
+    /**
+     * get/set clip height
+     * @name clipHeight
      * @method
      * @memberof Kinetic.Container.prototype
      * @param {Number} height
+     * @returns {Number}
+     * @example
+     * // get clip height<br>
+     * var clipHeight = container.clipHeight();<br><br>
+     *
+     * // set clip height<br>
+     * container.clipHeight(100);
      */
 
-    /**
-     * get clip height
-     * @name getClipHeight
-     * @method
-     * @memberof Kinetic.Container.prototype
-     * @returns {Number}
-     */
+     Kinetic.Collection.mapMethods(Kinetic.Container);
 })();

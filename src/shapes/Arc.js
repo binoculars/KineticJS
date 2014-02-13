@@ -4,8 +4,7 @@
      * @constructor
      * @augments Kinetic.Shape
      * @param {Object} config
-     * @param {Number} config.angle
-     * @param {Number} config.angleDeg angle in degrees
+     * @param {Number} config.angle in degrees
      * @param {Number} config.innerRadius
      * @param {Number} config.outerRadius
      * @param {Boolean} [config.clockwise]
@@ -13,13 +12,13 @@
      * @@nodeParams
      * @example
      * // draw a Arc that's pointing downwards<br>
-     * var Arc = new Kinetic.Arc({<br>
+     * var arc = new Kinetic.Arc({<br>
      *   innerRadius: 40,<br>
      *   outerRadius: 80,<br>
      *   fill: 'red',<br>
      *   stroke: 'black'<br>
      *   strokeWidth: 5,<br>
-     *   angleDeg: 60,<br>
+     *   angle: 60,<br>
      *   rotationDeg: -120<br>
      * });
      */
@@ -32,12 +31,15 @@
             // call super constructor
             Kinetic.Shape.call(this, config);
             this.className = 'Arc';
-            this.setDrawFunc(this._drawFunc);
+            this.sceneFunc(this._sceneFunc);
         },
-        _drawFunc: function(context) {
+        _sceneFunc: function(context) {
+            var angle = this.angle() * Math.PI / 180,
+                clockwise = this.clockwise();
+
             context.beginPath();
-            context.arc(0, 0, this.getOuterRadius(), 0, this.getAngle(), this.getClockwise());
-            context.arc(0, 0, this.getInnerRadius(), this.getAngle(), 0, !this.getClockwise());
+            context.arc(0, 0, this.getOuterRadius(), 0, angle, clockwise);
+            context.arc(0, 0, this.getInnerRadius(), angle, 0, !clockwise);
             context.closePath();
             context.fillStrokeShape(this);
         }
@@ -45,96 +47,76 @@
     Kinetic.Util.extend(Kinetic.Arc, Kinetic.Shape);
 
     // add getters setters
-    Kinetic.Factory.addGetterSetter(Kinetic.Arc, 'innerRadius', function() {
-        return 0;
-    });
+    Kinetic.Factory.addGetterSetter(Kinetic.Arc, 'innerRadius', 0);
 
     /**
-     * set innerRadius
-     * @name setInnerRadius
+     * get/set innerRadius
+     * @name innerRadius
      * @method
      * @memberof Kinetic.Arc.prototype
      * @param {Number} innerRadius
-     */
-
-     /**
-     * get innerRadius
-     * @name getInnerRadius
-     * @method
-     * @memberof Kinetic.Arc.prototype
      * @returns {Number}
+     * @example
+     * // get inner radius
+     * var innerRadius = arc.innerRadius();
+     *
+     * // set inner radius
+     * arc.innerRadius(20);
      */
      
-    Kinetic.Factory.addGetterSetter(Kinetic.Arc, 'outerRadius', function() {
-        return 0;
-    });
+    Kinetic.Factory.addGetterSetter(Kinetic.Arc, 'outerRadius', 0);
 
     /**
-     * set outerRadius
-     * @name setOuterRadius
+     * get/set outerRadius
+     * @name outerRadius
      * @method
      * @memberof Kinetic.Arc.prototype
-     * @param {Number} innerRadius
-     */
-
-     /**
-     * get outerRadius
-     * @name getOuterRadius
-     * @method
-     * @memberof Kinetic.Arc.prototype
+     * @param {Number} outerRadius
      * @returns {Number}
+     * @example
+     * // get outer radius<br>
+     * var outerRadius = arc.outerRadius();<br><br>
+     *
+     * // set outer radius<br>
+     * arc.outerRadius(20);
      */
 
-    Kinetic.Factory.addRotationGetterSetter(Kinetic.Arc, 'angle', 0);
+    Kinetic.Factory.addGetterSetter(Kinetic.Arc, 'angle', 0);
 
     /**
-     * set angle
-     * @name setAngle
+     * get/set angle in degrees
+     * @name angle
      * @method
      * @memberof Kinetic.Arc.prototype
      * @param {Number} angle
-     */
-
-     /**
-     * set angle in degrees
-     * @name setAngleDeg
-     * @method
-     * @memberof Kinetic.Arc.prototype
-     * @param {Number} angleDeg
-     */
-
-     /**
-     * get angle
-     * @name getAngle
-     * @method
-     * @memberof Kinetic.Arc.prototype
      * @returns {Number}
-     */
-
-     /**
-     * get angle in degrees
-     * @name getAngleDeg
-     * @method
-     * @memberof Kinetic.Arc.prototype
-     * @returns {Number}
+     * @example
+     * // get angle<br>
+     * var angle = arc.angle();<br><br>
+     *
+     * // set angle<br>
+     * arc.angle(20);
      */
 
     Kinetic.Factory.addGetterSetter(Kinetic.Arc, 'clockwise', false);
 
     /**
-     * set clockwise draw direction.  If set to true, the Arc will be drawn clockwise
-     *  If set to false, the Arc will be drawn anti-clockwise.  The default is false.
-     * @name setClockwise
+     * get/set clockwise flag
+     * @name clockwise
      * @method
      * @memberof Kinetic.Arc.prototype
-     * @param {Boolean} clockwise
+     * @param {Number} clockwise
+     * @returns {Number}
+     * @example
+     * // get clockwise flag<br>
+     * var clockwise = arc.clockwise();<br><br>
+     *
+     * // draw arc counter-clockwise<br>
+     * arc.clockwise(false);<br><br>
+     *
+     * // draw arc clockwise<br>
+     * arc.clockwise(true);
      */
 
-    /**
-     * get clockwise
-     * @name getClockwise
-     * @method
-     * @memberof Kinetic.Arc.prototype
-     * @returns {Boolean}
-     */
+     Kinetic.Collection.mapMethods(Kinetic.Arc);
 })();

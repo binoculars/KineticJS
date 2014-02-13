@@ -7,15 +7,13 @@
      * @constructor
      * @augments Kinetic.Shape
      * @param {Object} config
-     * @param {Number} config.angle
-     * @param {Number} config.angleDeg angle in degrees
      * @param {Number} config.innerRadius
      * @param {Number} config.outerRadius
      * @param {Boolean} [config.clockwise]
      * @@shapeParams
      * @@nodeParams
      * @example
-     * var Ring = new Kinetic.Ring({<br>
+     * var ring = new Kinetic.Ring({<br>
      *   innerRadius: 40,<br>
      *   outerRadius: 80,<br>
      *   fill: 'red',<br>
@@ -32,9 +30,9 @@
             // call super constructor
             Kinetic.Shape.call(this, config);
             this.className = 'Ring';
-            this.setDrawFunc(this._drawFunc);
+            this.sceneFunc(this._sceneFunc);
         },
-        _drawFunc: function(context) {
+        _sceneFunc: function(context) {
             context.beginPath();
             context.arc(0, 0, this.getInnerRadius(), 0, PIx2, false);
             context.moveTo(this.getOuterRadius(), 0);
@@ -64,43 +62,39 @@
     Kinetic.Util.extend(Kinetic.Ring, Kinetic.Shape);
 
     // add getters setters
-    Kinetic.Factory.addGetterSetter(Kinetic.Ring, 'innerRadius', function() {
-        return 0;
-    });
+    Kinetic.Factory.addGetterSetter(Kinetic.Ring, 'innerRadius', 0);
 
     /**
-     * set innerRadius
-     * @name setInnerRadius
+     * get/set innerRadius
+     * @name innerRadius
      * @method
      * @memberof Kinetic.Ring.prototype
      * @param {Number} innerRadius
-     */
-
-     /**
-     * get innerRadius
-     * @name getInnerRadius
-     * @method
-     * @memberof Kinetic.Ring.prototype
      * @returns {Number}
+     * @example
+     * // get inner radius<br>
+     * var innerRadius = ring.innerRadius();<br><br>
+     *
+     * // set inner radius<br>
+     * ring.innerRadius(20);
      */
      
-    Kinetic.Factory.addGetterSetter(Kinetic.Ring, 'outerRadius', function() {
-        return 0;
-    });
+    Kinetic.Factory.addGetterSetter(Kinetic.Ring, 'outerRadius', 0);
 
     /**
-     * set outerRadius
-     * @name setOuterRadius
+     * get/set outerRadius
+     * @name outerRadius
      * @method
      * @memberof Kinetic.Ring.prototype
-     * @param {Number} innerRadius
+     * @param {Number} outerRadius
+     * @returns {Number}
+     * @example
+     * // get outer radius<br>
+     * var outerRadius = ring.outerRadius();<br><br>
+     *
+     * // set outer radius<br>
+     * ring.outerRadius(20);
      */
 
-     /**
-     * get outerRadius
-     * @name getOuterRadius
-     * @method
-     * @memberof Kinetic.Ring.prototype
-     * @returns {Number}
-     */
+     Kinetic.Collection.mapMethods(Kinetic.Ring);
 })();

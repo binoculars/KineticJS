@@ -9,67 +9,50 @@ suite('Shape', function() {
             y: 90,
             width: 100,
             height: 50,
-            fill: 'green',
-            stroke: 'red'
-
+            fillGreen: 128,
+            strokeRed: 255,
+            draggable: true
         });
 
         layer.add(rect);
         stage.add(layer);
 
-        // test component getters
-        assert.equal(rect.getFillRGB().r, 0, 'rect fill RGB.r should be 0');
-        assert.equal(rect.getFillRGB().g, 128, 'rect fill RGB.g should be 128');
-        assert.equal(rect.getFillRGB().b, 0, 'rect fill RGB.b should be 0');
+        assert.equal(rect.getFillRed(), 0, 'rect fill r should be 0');
+        assert.equal(rect.getFillGreen(), 128, 'rect fill g should be 128');
+        assert.equal(rect.getFillBlue(), 0, 'rect fill b should be 0');
 
-        assert.equal(rect.getFillR(), 0, 'rect fill r should be 0');
-        assert.equal(rect.getFillG(), 128, 'rect fill g should be 128');
-        assert.equal(rect.getFillB(), 0, 'rect fill b should be 0');
+        assert.equal(rect.getStrokeRed(), 255, 'rect stroke r should be 255');
+        assert.equal(rect.getStrokeGreen(), 0, 'rect stroke g should be 0');
+        assert.equal(rect.getStrokeBlue(), 0, 'rect stroke b should be 0');
 
-        assert.equal(rect.getStrokeR(), 255, 'rect stroke r should be 255');
-        assert.equal(rect.getStrokeG(), 0, 'rect stroke g should be 0');
-        assert.equal(rect.getStrokeB(), 0, 'rect stroke b should be 0');
+        rect.fillRed(130);
+        assert.equal(rect.fillRed(), 130, 'rect fill r should be 130');
 
-        rect.setFill('#008000');
-        rect.setStroke('#ff0000');
+        rect.fillGreen(140);
+        assert.equal(rect.fillGreen(), 140, 'rect fill g should be 140');
 
-        assert.equal(rect.getFillR(), 0, 'rect fill r should be 0');
-        assert.equal(rect.getFillG(), 128, 'rect fill g should be 128');
-        assert.equal(rect.getFillB(), 0, 'rect fill b should be 0');
+        rect.fillBlue(150);
+        assert.equal(rect.fillBlue(), 150, 'rect fill b should be 150');
 
-        assert.equal(rect.getStrokeR(), 255, 'rect stroke r should be 255');
-        assert.equal(rect.getStrokeG(), 0, 'rect stroke g should be 0');
-        assert.equal(rect.getStrokeB(), 0, 'rect stroke b should be 0');
+        rect.fillRed(0);
+        rect.fillGreen(128);
+        rect.fillBlue(0);
 
-        rect.setFill('rgb(0,128,0)');
-        rect.setStroke('rgb(255, 0, 0)');
+        // var tween = new Kinetic.Tween({
+        //     node: rect,
+        //     fillGreen: 0,
+        //     fillRed: 255,
+        //     duration: 2,
+        //     fillAlpha: 0
+        // });
 
-        assert.equal(rect.getFillR(), 0, 'rect fill r should be 0');
-        assert.equal(rect.getFillG(), 128, 'rect fill g should be 128');
-        assert.equal(rect.getFillB(), 0, 'rect fill b should be 0');
+        // tween.play();
 
-        assert.equal(rect.getStrokeR(), 255, 'rect stroke r should be 255');
-        assert.equal(rect.getStrokeG(), 0, 'rect stroke g should be 0');
-        assert.equal(rect.getStrokeB(), 0, 'rect stroke b should be 0');
 
-        // test setters
-        rect.setFillRGB({
-            r: 100,
-            b: 200
-        });
 
-        assert.equal(rect.getFillR(), 100, 'rect fill r should be 100');
-        assert.equal(rect.getFillG(), 128, 'rect fill g should be 128');
-        assert.equal(rect.getFillB(), 200, 'rect fill b should be 200');
+        layer.draw();
 
-        rect.setFillR(130);
-        assert.equal(rect.getFillR(), 130, 'rect fill r should be 130');
-
-        rect.setFillG(140);
-        assert.equal(rect.getFillG(), 140, 'rect fill g should be 140');
-
-        rect.setFillB(150);
-        assert.equal(rect.getFillB(), 150, 'rect fill b should be 150');
+        //console.log(layer.getContext().getTrace());
     });
 
     // ======================================================
@@ -193,7 +176,7 @@ suite('Shape', function() {
                 fillPatternY: -30,
                 fillPatternScale: {x: 0.5, y:0.5},
                 fillPatternOffset: {x: 219, y: 150},
-                fillPatternRotation: Math.PI * 0.5,
+                fillPatternRotation: 90,
                 fillPatternRepeat: 'no-repeat',
 
                 stroke: 'blue',
@@ -217,11 +200,11 @@ suite('Shape', function() {
             assert.equal(star.getFillPatternScale().y, 0.5, 'star fill scale y should be 0.5');
             assert.equal(star.getFillPatternOffset().x, 219, 'star fill offset x should be 219');
             assert.equal(star.getFillPatternOffset().y, 150, 'star fill offset y should be 150');
-            assert.equal(star.getFillPatternRotation(), Math.PI * 0.5, 'star fill rotation should be Math.PI * 0.5');
+            assert.equal(star.getFillPatternRotation(), 90, 'star fill rotation should be 90');
 
-            star.setFillPatternRotationDeg(180);
+            star.setFillPatternRotation(180);
 
-            assert.equal(star.getFillPatternRotation(), Math.PI, 'star fill rotation should be Math.PI');
+            assert.equal(star.getFillPatternRotation(), 180, 'star fill rotation should be 180');
 
             star.setFillPatternScale({x:1, y:1});
 
@@ -339,7 +322,7 @@ suite('Shape', function() {
             shadowColor: 'black',
             shadowBlur: 10,
             shadowOffset: {x:10, y:10},
-            dashArray: [10, 10],
+            dash: [10, 10],
             scaleX: 3
         });
         layer.add(circle);
@@ -349,9 +332,9 @@ suite('Shape', function() {
         assert.equal(circle.getFillEnabled(), true, 'fillEnabled should be true');
         assert.equal(circle.getStrokeEnabled(), true, 'strokeEnabled should be true');
         assert.equal(circle.getShadowEnabled(), true, 'shadowEnabled should be true');
-        assert.equal(circle.getDashArrayEnabled(), true, 'dashArrayEnabled should be true');
+        assert.equal(circle.dashEnabled(), true, 'dashEnabled should be true');
 
-        circle.disableStrokeScale();
+        circle.strokeScaleEnabled(false);
         assert.equal(circle.getStrokeScaleEnabled(), false);
 
         layer.draw();
@@ -359,31 +342,31 @@ suite('Shape', function() {
         //console.log(trace);
         assert.equal(trace, 'clearRect(0,0,578,200);save();save();shadowColor=black;shadowBlur=10;shadowOffsetX=10;shadowOffsetY=10;drawImage([object HTMLCanvasElement],0,0);restore();drawImage([object HTMLCanvasElement],0,0);restore();clearRect(0,0,578,200);save();save();shadowColor=black;shadowBlur=10;shadowOffsetX=10;shadowOffsetY=10;drawImage([object HTMLCanvasElement],0,0);restore();drawImage([object HTMLCanvasElement],0,0);restore();');
 
-        circle.disableFill();
+        circle.fillEnabled(false);
         assert.equal(circle.getFillEnabled(), false, 'fillEnabled should be false');
 
 
-        circle.disableStroke();
+        circle.strokeEnabled(false);
         assert.equal(circle.getStrokeEnabled(), false, 'strokeEnabled should be false');
 
-        circle.disableShadow();
+        circle.shadowEnabled(false);
         assert.equal(circle.getShadowEnabled(), false, 'shadowEnabled should be false');
 
-        circle.disableDashArray();
-        assert.equal(circle.getDashArrayEnabled(), false, 'dashArrayEnabled should be false');
+        circle.dashEnabled(false);
+        assert.equal(circle.dashEnabled(), false, 'dashEnabled should be false');
 
         // re-enable
 
-        circle.enableDashArray();
-        assert.equal(circle.getDashArrayEnabled(), true, 'dashArrayEnabled should be true');
+        circle.dashEnabled(true);
+        assert.equal(circle.getDashEnabled(), true, 'dashEnabled should be true');
 
-        circle.enableShadow();
+        circle.shadowEnabled(true);
         assert.equal(circle.getShadowEnabled(), true, 'shadowEnabled should be true');
 
-        circle.enableStroke();
+        circle.strokeEnabled(true);
         assert.equal(circle.getStrokeEnabled(), true, 'strokeEnabled should be true');
 
-        circle.enableFill();
+        circle.fillEnabled(true);
         assert.equal(circle.getFillEnabled(), true, 'fillEnabled should be true');
 
     });
@@ -507,19 +490,14 @@ suite('Shape', function() {
     rect.stroke('blue');
     assert.equal(rect.stroke(), 'blue');
 
-    rect.strokeR(255);
-    assert.equal(rect.strokeR(), 255);
+    rect.strokeRed(255);
+    assert.equal(rect.strokeRed(), 255);
 
-    rect.strokeG(20);
-    assert.equal(rect.strokeG(), 20);
+    rect.strokeGreen(20);
+    assert.equal(rect.strokeGreen(), 20);
 
-    rect.strokeB(30);
-    assert.equal(rect.strokeB(), 30);
-
-    rect.strokeRGB({r: 1, g: 2, b: 3});
-    assert.equal(rect.strokeRGB().r, 1);
-    assert.equal(rect.strokeRGB().g, 2);
-    assert.equal(rect.strokeRGB().b, 3);
+    rect.strokeBlue(30);
+    assert.equal(rect.strokeBlue(), 30);
 
     rect.lineJoin('bevel');
     assert.equal(rect.lineJoin(), 'bevel');
@@ -530,18 +508,117 @@ suite('Shape', function() {
     rect.strokeWidth(8);
     assert.equal(rect.strokeWidth(), 8);
 
-    rect.drawFunc('function');
-    assert.equal(rect.drawFunc(), 'function');
+    rect.sceneFunc('function');
+    assert.equal(rect.sceneFunc(), 'function');
 
-    rect.drawHitFunc('function');
-    assert.equal(rect.drawHitFunc(), 'function');
+    rect.hitFunc('function');
+    assert.equal(rect.hitFunc(), 'function');
 
-    rect.dashArray([1]);
-    assert.equal(rect.dashArray()[0], 1);
+    rect.dash([1]);
+    assert.equal(rect.dash()[0], 1);
 
     // NOTE: skipping the rest because it would take hours to test all possible methods.  
     // This should hopefully be enough to test Factor overloaded methods
 
 
   });
+
+  // ======================================================
+  test('create image hit region', function(done) {
+      var imageObj = new Image();
+
+      var stage = addStage();
+      var layer = new Kinetic.Layer();
+
+      imageObj.onload = function() {
+
+          var lion = new Kinetic.Image({
+              x: 200,
+              y: 40,
+              image: imageObj,
+              draggable: true,
+              shadowColor: 'black',
+              shadowBlur: 10,
+              shadowOffset: 20,
+              shadowOpacity: 0.2
+          });
+
+          // override color key with black
+          lion.colorKey = '#000000';
+          Kinetic.shapes['#000000'] = lion;
+
+          layer.add(lion);
+
+          stage.add(layer);
+
+          lion.cache();
+
+
+          //document.body.appendChild(lion._cache.canvas.hit._canvas);
+
+
+          lion.drawHitFromCache();
+
+
+          layer.draw();
+
+
+          done();
+
+
+      };
+      imageObj.src = 'assets/lion.png';
+
+      showHit(layer);
+
+      layer.hitCanvas._canvas.style.border='2px solid black';
+  });
+
+  test('back compat', function() {
+    assert.notEqual(Kinetic.Shape.prototype.dashArray, undefined);
+    assert.notEqual(Kinetic.Shape.prototype.setDashArray, undefined);
+    assert.notEqual(Kinetic.Shape.prototype.getDashArray, undefined);
+  });
+
+  test('test defaults', function() {
+    var shape = new Kinetic.Shape();
+
+    assert.equal(shape.strokeRed(), 0);
+    assert.equal(shape.strokeGreen(), 0);
+    assert.equal(shape.strokeBlue(), 0);
+    assert.equal(shape.strokeWidth(), 2);
+    assert.equal(shape.shadowRed(), 0);
+    assert.equal(shape.shadowGreen(), 0);
+    assert.equal(shape.shadowBlue(), 0);
+    assert.equal(shape.shadowOffsetX(), 0);
+    assert.equal(shape.shadowOffsetY(), 0);
+    assert.equal(shape.fillRed(), 0);
+    assert.equal(shape.fillGreen(), 0);
+    assert.equal(shape.fillBlue(), 0);
+    assert.equal(shape.fillPatternX(), 0);
+    assert.equal(shape.fillPatternY(), 0);
+    assert.equal(shape.fillRadialGradientStartRadius(), 0);
+    assert.equal(shape.fillRadialGradientEndRadius(), 0);
+    assert.equal(shape.fillPatternRepeat(), 'repeat');
+    assert.equal(shape.fillEnabled(), true);
+    assert.equal(shape.strokeEnabled(), true);
+    assert.equal(shape.shadowEnabled(), true);
+    assert.equal(shape.dashEnabled(), true);
+    assert.equal(shape.strokeScaleEnabled(), true);
+    assert.equal(shape.fillPriority(), 'color');
+    assert.equal(shape.fillPatternOffsetX(), 0);
+    assert.equal(shape.fillPatternOffsetY(), 0);
+    assert.equal(shape.fillPatternScaleX(), 1);
+    assert.equal(shape.fillPatternScaleY(), 1);
+    assert.equal(shape.fillLinearGradientStartPointX(), 0);
+    assert.equal(shape.fillLinearGradientStartPointY(), 0);
+    assert.equal(shape.fillLinearGradientEndPointX(), 0);
+    assert.equal(shape.fillLinearGradientEndPointY(), 0);
+    assert.equal(shape.fillRadialGradientStartPointX(), 0);
+    assert.equal(shape.fillRadialGradientStartPointY(), 0);
+    assert.equal(shape.fillRadialGradientEndPointX(), 0);
+    assert.equal(shape.fillRadialGradientEndPointY(), 0);
+    assert.equal(shape.fillPatternRotation(), 0);
+  });
+
 });

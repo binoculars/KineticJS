@@ -97,7 +97,7 @@
          * @returns {Boolean}
          */
         hasStroke: function() {
-            return !!(this.getStroke() || this.getStrokeWidth());
+            return !!(this.stroke() || this.strokeRed() || this.strokeGreen() || this.strokeBlue());
         },
         _get: function(selector) {
             return this.className === selector || this.nodeType === selector ? [this] : [];
@@ -124,106 +124,6 @@
             p = bufferHitCanvas.context.getImageData(pos.x | 0, pos.y | 0, 1, 1).data;
             return p[3] > 0;
         },
-        /**
-         * enable fill
-         * @method
-         * @memberof Kinetic.Shape.prototype
-         * @returns {Kineitc.Shape}
-         */
-        enableFill: function() {
-            this._setAttr('fillEnabled', true);
-            return this;
-        },
-        /**
-         * disable fill
-         * @method
-         * @memberof Kinetic.Shape.prototype
-         * @returns {Kineitc.Shape}
-         */
-        disableFill: function() {
-            this._setAttr('fillEnabled', false);
-            return this;
-        },
-        /**
-         * enable stroke
-         * @method
-         * @memberof Kinetic.Shape.prototype
-         * @returns {Kineitc.Shape}
-         */
-        enableStroke: function() {
-            this._setAttr('strokeEnabled', true);
-            return this;
-        },
-        /**
-         * disable stroke
-         * @method
-         * @memberof Kinetic.Shape.prototype
-         * @returns {Kineitc.Shape}
-         */
-        disableStroke: function() {
-            this._setAttr('strokeEnabled', false);
-            return this;
-        },
-        /**
-         * enable stroke scale
-         * @method
-         * @memberof Kinetic.Shape.prototype
-         * @returns {Kineitc.Shape}
-         */
-        enableStrokeScale: function() {
-            this._setAttr('strokeScaleEnabled', true);
-            return this;
-        },
-        /**
-         * disable stroke scale
-         * @method
-         * @memberof Kinetic.Shape.prototype
-         * @returns {Kineitc.Shape}
-         */
-        disableStrokeScale: function() {
-            this._setAttr('strokeScaleEnabled', false);
-            return this;
-        },
-        /**
-         * enable shadow
-         * @method
-         * @memberof Kinetic.Shape.prototype
-         * @returns {Kineitc.Shape}
-         */
-        enableShadow: function() {
-            this._setAttr('shadowEnabled', true);
-            return this;
-        },
-        /**
-         * disable shadow
-         * @method
-         * @memberof Kinetic.Shape.prototype
-         * @returns {Kineitc.Shape}
-         */
-        disableShadow: function() {
-            this._setAttr('shadowEnabled', false);
-            return this;
-        },
-        /**
-         * enable dash array
-         * @method
-         * @memberof Kinetic.Shape.prototype
-         * @returns {Kineitc.Shape}
-         */
-        enableDashArray: function() {
-            this._setAttr('dashArrayEnabled', true);
-            return this;
-        },
-        /**
-         * disable dash array
-         * @method
-         * @memberof Kinetic.Shape.prototype
-         * @returns {Kineitc.Shape}
-         */
-        disableDashArray: function() {
-            this._setAttr('dashArrayEnabled', false);
-            return this;
-        },
         // extends Node.prototype.destroy 
         destroy: function() {
             Kinetic.Node.prototype.destroy.call(this);
@@ -235,1258 +135,1254 @@
         drawScene: function(can) {
             var canvas = can || this.getLayer().getCanvas(),
                 context = canvas.getContext(),
-                drawFunc = this.getDrawFunc(),
-                cachedSceneCanvas = this._cache.sceneCanvas;
-
-            if(this.isVisible()) { 
-                context.save();
-                // if cache is available
-                if (cachedSceneCanvas) {
-                    context.drawImage(cachedSceneCanvas._canvas, 0, 0);
-                }
-                else if (drawFunc) {
-                    this._drawScene(context);
-                }
-                context.restore();
-            } 
-
-            return this;   
-        },
-        _drawScene: function(context) {
-            var drawFunc = this.getDrawFunc(),
+                cachedCanvas = this._cache.canvas,
+                drawFunc = this.sceneFunc(),
                 hasShadow = this.hasShadow(),
                 stage, bufferCanvas, bufferContext;
 
-            // if buffer canvas is needed
-            if (this._useBufferCanvas()) {
-                stage = this.getStage();
-                bufferCanvas = stage.bufferCanvas;
-                bufferContext = bufferCanvas.getContext();
-                bufferContext.clear();
-                bufferContext.save();
-                bufferContext._applyLineJoin(this);
-                bufferContext._applyAncestorTransforms(this);
-                drawFunc.call(this, bufferContext);
-                bufferContext.restore();
-
-                if (hasShadow) {
-                    context.save();
-                    context._applyShadow(this);
-                    context.drawImage(bufferCanvas._canvas, 0, 0); 
-                    context.restore();
+            if(this.isVisible()) { 
+                if (cachedCanvas) {
+                    this._drawCachedSceneCanvas(context);
                 }
-
-                context._applyOpacity(this);
-                context.drawImage(bufferCanvas._canvas, 0, 0);
-            }
-            // if buffer canvas is not needed
-            else {
-                context._applyLineJoin(this);
-                context._applyAncestorTransforms(this);
-
-                if (hasShadow) {
+                else if (drawFunc) {
                     context.save();
-                    context._applyShadow(this);
-                    drawFunc.call(this, context);
-                    context.restore();
-                }   
+                    // if buffer canvas is needed
+                    if (this._useBufferCanvas()) {
+                        stage = this.getStage();
+                        bufferCanvas = stage.bufferCanvas;
+                        bufferContext = bufferCanvas.getContext();
+                        bufferContext.clear();
+                        bufferContext.save();
+                        bufferContext._applyLineJoin(this);
+                        bufferContext._applyTransform(this);
+                     
+                        drawFunc.call(this, bufferContext);
+                        bufferContext.restore();
 
-                context._applyOpacity(this);
-                drawFunc.call(this, context);
+                        if (hasShadow) {
+                            context.save();
+                            context._applyShadow(this);
+                            context.drawImage(bufferCanvas._canvas, 0, 0); 
+                            context.restore();
+                        }
+
+                        context._applyOpacity(this);
+                        context.drawImage(bufferCanvas._canvas, 0, 0);
+                    }
+                    // if buffer canvas is not needed
+                    else {
+                        context._applyLineJoin(this);
+                        context._applyTransform(this);
+               
+                        if (hasShadow) {
+                            context.save();
+                            context._applyShadow(this);
+                            drawFunc.call(this, context);
+                            context.restore();
+                        }   
+
+                        context._applyOpacity(this);
+                        drawFunc.call(this, context);
+                    }   
+                    context.restore(); 
+                }
             }
+
+            return this;
         },
         drawHit: function(can) {
             var canvas = can || this.getLayer().hitCanvas,
                 context = canvas.getContext(),
-                drawFunc = this.getDrawHitFunc() || this.getDrawFunc(),
-                cachedHitCanvas = this._cache.hitCanvas;
+                drawFunc = this.hitFunc() || this.sceneFunc(),
+                cachedCanvas = this._cache.canvas,
+                cachedHitCanvas = cachedCanvas && cachedCanvas.hit;
 
             if(this.shouldDrawHit()) {
-                context.save();
+                
                 if (cachedHitCanvas) {
-                    context.drawImage(cachedHitCanvas._canvas, 0, 0); 
+                    this._drawCachedHitCanvas(context);
                 }
                 else if (drawFunc) {
+                    context.save();
                     context._applyLineJoin(this);
-                    context._applyAncestorTransforms(this);
+                    context._applyTransform(this);
+                   
                     drawFunc.call(this, context);   
+                    context.restore();
                 }
-                context.restore();
+                
             }
 
             return this;
-        }
+        },
+        /**
+        * draw hit graph using the cached scene canvas
+        * @method
+        * @memberof Kinetic.Shape.prototype
+        * @param {Integer} alphaThreshold alpha channel threshold that determines whether or not
+        *  a pixel should be drawn onto the hit graph.  Must be a value between 0 and 255.  
+        *  The default is 0
+        * @returns {Kinetic.Shape}
+        * @example
+        * shape.cache();
+        * shape.drawHitFromCache();
+        */
+        drawHitFromCache: function(alphaThreshold) {
+            var threshold = alphaThreshold || 0,
+                cachedCanvas = this._cache.canvas,
+                sceneCanvas = this._getCachedSceneCanvas(),
+                sceneContext = sceneCanvas.getContext(),
+                hitCanvas = cachedCanvas.hit,
+                hitContext = hitCanvas.getContext(),
+                width = sceneCanvas.getWidth(),
+                height = sceneCanvas.getHeight(),
+                sceneImageData, sceneData, hitImageData, hitData, len, rgbColorKey, i, alpha;
+
+            hitContext.clear();
+
+            try {
+                sceneImageData = sceneContext.getImageData(0, 0, width, height);
+                sceneData = sceneImageData.data;
+                hitImageData = hitContext.getImageData(0, 0, width, height);
+                hitData = hitImageData.data;
+                len = sceneData.length;
+                rgbColorKey = Kinetic.Util._hexToRgb(this.colorKey);
+
+                // replace non transparent pixels with color key
+                for(i = 0; i < len; i += 4) {
+                    alpha = sceneData[i + 3];
+                    if (alpha > threshold) {
+                        hitData[i] = rgbColorKey.r;
+                        hitData[i + 1] = rgbColorKey.g;
+                        hitData[i + 2] = rgbColorKey.b;
+                        hitData[i + 3] = 255;
+                    }
+                }
+
+                hitContext.putImageData(hitImageData, 0, 0);
+            }
+            catch(e) {
+                Kinetic.Util.warn('Unable to draw hit graph from cached scene canvas. ' + e.message);
+            }
+
+            return this;
+        },
     });
     Kinetic.Util.extend(Kinetic.Shape, Kinetic.Node);
 
     // add getters and setters
-    Kinetic.Factory.addColorGetterSetter(Kinetic.Shape, 'stroke');
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'stroke');
 
     /**
-     * set stroke color
-     * @name setStroke
+     * get/set stroke color
+     * @name stroke
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {String} color
-     * @returns {Kineitc.Shape}
-     */
-
-     /**
-     * set stroke color with an object literal
-     * @name setStrokeRGB
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @param {Obect} color requires an object literal containing an r, g, and b component
-     * @returns {Kineitc.Shape}
+     * @returns {String}
      * @example
-     * shape.setStrokeRGB({<br>
-     *   r: 200,<br>
-     *   g: 50,<br>
-     *   b: 100<br>
-     * });
+     * // get stroke color<br>
+     * var stroke = shape.stroke();<br><br>
+     *
+     * // set stroke color with color string<br>
+     * shape.stroke('green');<br><br>
+     *
+     * // set stroke color with hex<br>
+     * shape.stroke('#00ff00');<br><br>
+     *
+     * // set stroke color with rgb<br>
+     * shape.stroke('rgb(0,255,0)');<br><br>
+     *
+     * // set stroke color with rgba and make it 50% opaque<br>
+     * shape.stroke('rgba(0,255,0,0.5');
      */
 
-     /**
-     * set stroke color red component
-     * @name setStrokeR
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'strokeRed', 0, Kinetic.Validators.RGBComponent);
+
+    /**
+     * get/set stroke red component
+     * @name strokeRed
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Integer} red
-     * @returns {Kineitc.Shape}
+     * @returns {Integer}
+     * @example
+     * // get stroke red component<br>
+     * var strokeRed = shape.strokeRed();<br><br>
+     *
+     * // set stroke red component<br>
+     * shape.strokeRed(0);
      */
 
-     /**
-     * set stroke color green component
-     * @name setStrokeG
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'strokeGreen', 0, Kinetic.Validators.RGBComponent);
+
+    /**
+     * get/set stroke green component
+     * @name strokeGreen
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Integer} green
-     * @returns {Kineitc.Shape}
+     * @returns {Integer}
+     * @example
+     * // get stroke green component<br>
+     * var strokeGreen = shape.strokeGreen();<br><br>
+     *
+     * // set stroke green component<br>
+     * shape.strokeGreen(255);
      */
 
-     /**
-     * set stroke color blue component
-     * @name setStrokeB
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'strokeBlue', 0, Kinetic.Validators.RGBComponent);
+
+    /**
+     * get/set stroke blue component
+     * @name strokeBlue
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Integer} blue
-     * @returns {Kineitc.Shape}
-     */
-
-     /**
-     * get stroke color
-     * @name getStroke
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @param {String} color
-     * @returns {Kineitc.Shape}
-     */
-
-     /**
-     * get stroke color as an object literal
-     * @name getStrokeRGB
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {Object}
-     */
-
-     /**
-     * get stroke color red component
-     * @name getStrokeR
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Integer}
+     * @example
+     * // get stroke blue component<br>
+     * var strokeBlue = shape.strokeBlue();<br><br>
+     *
+     * // set stroke blue component<br>
+     * shape.strokeBlue(0);
      */
 
-     /**
-     * get stroke color green component
-     * @name getStrokeG
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'strokeAlpha', 1, Kinetic.Validators.alphaComponent);
+
+    /**
+     * get/set stroke alpha component.  Alpha is a real number between 0 and 1.  The default
+     *  is 1.
+     * @name strokeAlpha
      * @method
      * @memberof Kinetic.Shape.prototype
-     * @returns {Integer}
+     * @param {Number} alpha
+     * @returns {Number}
+     * @example
+     * // get stroke alpha component<br>
+     * var strokeAlpha = shape.strokeAlpha();<br><br>
+     *
+     * // set stroke alpha component<br>
+     * shape.strokeAlpha(0.5);
      */
 
-     /**
-     * get stroke color blue component
-     * @name getStrokeB
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'strokeWidth', 2);
+
+    /**
+     * get/set stroke width
+     * @name strokeWidth
      * @method
      * @memberof Kinetic.Shape.prototype
-     * @returns {Integer}
+     * @param {Number} strokeWidth
+     * @returns {Number}
+     * @example
+     * // get stroke width<br>
+     * var strokeWidth = shape.strokeWidth();<br><br>
+     *
+     * // set stroke width<br>
+     * shape.strokeWidth();
      */
 
     Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'lineJoin');
 
     /**
-     * set line join
-     * @name setLineJoin
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @param {String} lineJoin.  Can be miter, round, or bevel.  The
+     * get/set line join.  Can be miter, round, or bevel.  The
      *  default is miter
-     * @returns {Kineitc.Shape}
-     */
-
-     /**
-     * get line join
-     * @name getLineJoin
+     * @name lineJoin
      * @method
      * @memberof Kinetic.Shape.prototype
+     * @param {String} lineJoin
      * @returns {String}
+     * @example
+     * // get line join<br>
+     * var lineJoin = shape.lineJoin();<br><br>
+     *
+     * // set line join<br>
+     * shape.lineJoin('round');
      */
-
 
     Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'lineCap');
 
     /**
-     * set line cap.  Can be butt, round, or square
-     * @name setLineCap
+     * get/set line cap.  Can be butt, round, or square
+     * @name lineCap
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {String} lineCap
-     * @returns {Kineitc.Shape}
-     */
-
-     /**
-     * get line cap
-     * @name getLineCap
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {String}
+     * @example
+     * // get line cap<br>
+     * var lineCap = shape.lineCap();<br><br>
+     *
+     * // set line cap<br>
+     * shape.lineCap('round');
      */
 
-    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'strokeWidth');
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'sceneFunc');
 
     /**
-     * set stroke width
-     * @name setStrokeWidth
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @param {Number} strokeWidth
-     * @returns {Kineitc.Shape}
-     */
-
-     /**
-     * get stroke width
-     * @name getStrokeWidth
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {Number}
-     */
-
-    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'drawFunc');
-
-    /**
-     * set draw function
-     * @name setDrawFunc
+     * get/set scene draw function
+     * @name sceneFunc
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Function} drawFunc drawing function
-     * @returns {Kineitc.Shape}
-     */
-
-     /**
-     * get draw function
-     * @name getDrawFunc
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Function}
-     */
-
-    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'drawHitFunc');
-
-    /**
-     * set draw hit function used for hit detection
-     * @name setDrawHitFunc
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @param {Function} drawHitFunc drawing function used for hit detection
-     * @returns {Kineitc.Shape}
-     */
-
-     /**
-     * get draw hit function
-     * @name getDrawHitFunc
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {Function}
-     */
-
-    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'dashArray');
-
-    /**
-     * set dash array for stroke.
-     * @name setDashArray
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @param {Array} dashArray
      * @example
-     *  // stroke dashes will be 10px long and 5 pixels apart<br>
-     *  line.setDashArray([10, 5]);<br><br>
-     *  
-     *  // stroke dashes will be be made up of alternating dashed<br> 
-     *  // lines that are 10px long and 20px apart, and dots that have<br> 
-     *  // a radius of 5px and are 20px apart<br>
-     *  line.setDashArray([10, 20, 0.001, 20]);
-     */
-
-     /**
-     * get dash array
-     * @name getDashArray
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {Array}
-     */
-
-    Kinetic.Factory.addColorGetterSetter(Kinetic.Shape, 'shadowColor');
-
-    /**
-     * set shadow color
-     * @name setShadowColor
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @param {String} color
-     * @returns {Kineitc.Shape}
-     */
-
-     /**
-     * set shadow color with an object literal
-     * @name setShadowColorRGB
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @param {Obect} color requires an object literal containing an r, g, and b component
-     * @returns {Kineitc.Shape}
-     * @example
-     * shape.setShadowRGB({<br>
-     *   r: 200,<br>
-     *   g: 50,<br>
-     *   b: 100<br>
+     * // get scene draw function<br>
+     * var sceneFunc = shape.sceneFunc();<br><br>
+     *
+     * // set scene draw function<br>
+     * shape.sceneFunc(function(context) {<br>
+     *   context.beginPath();<br>
+     *   context.rect(0, 0, this.width(), this.height());<br>
+     *   context.closePath();<br>
+     *   context.fillStrokeShape(this);<br>
      * });
      */
 
-     /**
-     * set shadow color red component
-     * @name setShadowColorR
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'hitFunc');
+
+    /**
+     * get/set hit draw function
+     * @name hitFunc
+     * @method
+     * @memberof Kinetic.Shape.prototype
+     * @param {Function} drawFunc drawing function
+     * @returns {Function}
+     * @example
+     * // get hit draw function<br>
+     * var hitFunc = shape.hitFunc();<br><br>
+     *
+     * // set hit draw function<br>
+     * shape.hitFunc(function(context) {<br>
+     *   context.beginPath();<br>
+     *   context.rect(0, 0, this.width(), this.height());<br>
+     *   context.closePath();<br>
+     *   context.fillStrokeShape(this);<br>
+     * });
+     */
+
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'dash');
+
+    /**
+     * get/set dash array for stroke.
+     * @name dash
+     * @method
+     * @memberof Kinetic.Shape.prototype
+     * @param {Array} dash
+     * @returns {Array}
+     * @example
+     *  // apply dashed stroke that is 10px long and 5 pixels apart<br>
+     *  line.dash([10, 5]);<br><br>
+     *  
+     *  // apply dashed stroke that is made up of alternating dashed<br> 
+     *  // lines that are 10px long and 20px apart, and dots that have<br> 
+     *  // a radius of 5px and are 20px apart<br>
+     *  line.dash([10, 20, 0.001, 20]);
+     */
+
+
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'shadowColor');
+
+    /**
+     * get/set shadow color
+     * @name shadowColor
+     * @method
+     * @memberof Kinetic.Shape.prototype
+     * @param {String} color
+     * @returns {String}
+     * @example
+     * // get shadow color<br>
+     * var shadow = shape.shadowColor();<br><br>
+     *
+     * // set shadow color with color string<br>
+     * shape.shadowColor('green');<br><br>
+     *
+     * // set shadow color with hex<br>
+     * shape.shadowColor('#00ff00');<br><br>
+     *
+     * // set shadow color with rgb<br>
+     * shape.shadowColor('rgb(0,255,0)');<br><br>
+     *
+     * // set shadow color with rgba and make it 50% opaque<br>
+     * shape.shadowColor('rgba(0,255,0,0.5');
+     */
+
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'shadowRed', 0, Kinetic.Validators.RGBComponent);
+
+    /**
+     * get/set shadow red component
+     * @name shadowRed
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Integer} red
-     * @returns {Kineitc.Shape}
+     * @returns {Integer}
+     * @example
+     * // get shadow red component<br>
+     * var shadowRed = shape.shadowRed();<br><br>
+     *
+     * // set shadow red component<br>
+     * shape.shadowRed(0);
      */
 
-     /**
-     * set shadow color green component
-     * @name setShadowColorG
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'shadowGreen', 0, Kinetic.Validators.RGBComponent);
+
+    /**
+     * get/set shadow green component
+     * @name shadowGreen
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Integer} green
-     * @returns {Kineitc.Shape}
+     * @returns {Integer}
+     * @example
+     * // get shadow green component<br>
+     * var shadowGreen = shape.shadowGreen();<br><br>
+     *
+     * // set shadow green component<br>
+     * shape.shadowGreen(255);
      */
 
-     /**
-     * set shadow color blue component
-     * @name setShadowColorB
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'shadowBlue', 0, Kinetic.Validators.RGBComponent);
+
+    /**
+     * get/set shadow blue component
+     * @name shadowBlue
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Integer} blue
-     * @returns {Kineitc.Shape}
+     * @returns {Integer}
+     * @example
+     * // get shadow blue component<br>
+     * var shadowBlue = shape.shadowBlue();<br><br>
+     *
+     * // set shadow blue component<br>
+     * shape.shadowBlue(0);
      */
 
-     /**
-     * get shadow color
-     * @name getShadowColor
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'shadowAlpha', 1, Kinetic.Validators.alphaComponent);
+
+    /**
+     * get/set shadow alpha component.  Alpha is a real number between 0 and 1.  The default
+     *  is 1.
+     * @name shadowAlpha
      * @method
      * @memberof Kinetic.Shape.prototype
-     * @returns {String}
+     * @param {Number} alpha
+     * @returns {Number}
+     * @example
+     * // get shadow alpha component<br>
+     * var shadowAlpha = shape.shadowAlpha();<br><br>
+     *
+     * // set shadow alpha component<br>
+     * shape.shadowAlpha(0.5);
      */
-
-     /**
-     * get shadow color as an object literal
-     * @name getShadowColorRGB
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {Object}
-     */
-
-     /**
-     * get shadow color red component
-     * @name getShadowColorR
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {String}
-     */
-
-     /**
-     * get shadow color green component
-     * @name getShadowColorG
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {String}
-     */
-
-     /**
-     * get shadow color blue component
-     * @name getShadowColorB
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {String}
-     */
-
+     
     Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'shadowBlur');
 
     /**
-     * set shadow blur
-     * @name setShadowBlur
+     * get/set shadow blur
+     * @name shadowBlur
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Number} blur
-     * @returns {Kineitc.Shape}
-     */
-
-     /**
-     * get shadow blur
-     * @name getShadowBlur
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Number}
+     * @example
+     * // get shadow blur<br>
+     * var shadowBlur = shape.shadowBlur();<br><br>
+     *
+     * // set shadow blur<br>
+     * shape.shadowBlur(10);
      */
 
     Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'shadowOpacity');
 
     /**
-     * set shadow opacity
-     * @name setShadowOpacity
+     * get/set shadow opacity.  must be a value between 0 and 1
+     * @name shadowOpacity
      * @method
      * @memberof Kinetic.Shape.prototype
-     * @param {Number} opacity must be a value between 0 and 1
-     * @returns {Kineitc.Shape}
-     */
-
-     /**
-     * get shadow opacity
-     * @name getShadowOpacity
-     * @method
-     * @memberof Kinetic.Shape.prototype
+     * @param {Number} opacity
      * @returns {Number}
+     * @example
+     * // get shadow opacity<br>
+     * var shadowOpacity = shape.shadowOpacity();<br><br>
+     *
+     * // set shadow opacity<br>
+     * shape.shadowOpacity(0.5);
      */
 
-    Kinetic.Factory.addPointGetterSetter(Kinetic.Shape, 'shadowOffset', 0);
+    Kinetic.Factory.addComponentsGetterSetter(Kinetic.Shape, 'shadowOffset', ['x', 'y']);
 
     /**
-     * set shadow offset
-     * @name setShadowOffset
+     * get/set shadow offset
+     * @name shadowOffset
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Object} offset
      * @param {Number} offset.x
      * @param {Number} offset.y
-     * @returns {Kineitc.Shape}
+     * @returns {Object}
      * @example
-     * // set x and y<br>
-     * shape.setShadowOffset({<br>
+     * // get shadow offset<br>
+     * var shadowOffset = shape.shadowOffset();<br><br>
+     *
+     * // set shadow offset<br>
+     * shape.shadowOffset({<br>
      *   x: 20<br>
-     *   y: 10
+     *   y: 10<br>
      * });
      */
 
-    /**
-     * get shadow offset
-     * @name getShadowOffset
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {Object}
-     */
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'shadowOffsetX', 0);
 
      /**
-     * set shadow offset x
-     * @name setShadowOffsetX
+     * get/set shadow offset x
+     * @name shadowOffsetX
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Number} x
-     * @returns {Kineitc.Shape}
-     */
-
-     /**
-     * get shadow offset x
-     * @name getShadowOffsetX
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Number}
+     * @example
+     * // get shadow offset x<br>
+     * var shadowOffsetX = shape.shadowOffsetX();<br><br>
+     *
+     * // set shadow offset x<br>
+     * shape.shadowOffsetX(5);
      */
 
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'shadowOffsetY', 0);
+
      /**
-     * set shadow offset y
-     * @name setShadowOffsetY
+     * get/set shadow offset y
+     * @name shadowOffsetY
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Number} y
-     * @returns {Kineitc.Shape}
-     */
-
-     /**
-     * get shadow offset y
-     * @name getShadowOffsetY
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Number}
+     * @example
+     * // get shadow offset y<br>
+     * var shadowOffsetY = shape.shadowOffsetY();<br><br>
+     *
+     * // set shadow offset y<br>
+     * shape.shadowOffsetY(5);
      */
 
     Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillPatternImage');
 
     /**
-     * set fill pattern image
-     * @name setFillPatternImage
+     * get/set fill pattern image
+     * @name fillPatternImage
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Image} image object
-     * @returns {Kineitc.Shape}
-     */
-
-     /**
-     * get fill pattern image
-     * @name getFillPatternImage
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Image}
+     * @example
+     * // get fill pattern image<br>
+     * var fillPatternImage = shape.fillPatternImage();<br><br>
+     *
+     * // set fill pattern image<br>
+     * var imageObj = new Image();<br>
+     * imageObj.onload = function() {<br>
+     *   shape.fillPatternImage(imageObj);<br>
+     * };<br>
+     * imageObj.src = 'path/to/image/jpg';
      */
 
-    Kinetic.Factory.addColorGetterSetter(Kinetic.Shape, 'fill');
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fill');
 
     /**
-     * set fill color
-     * @name setFill
+     * get/set fill color
+     * @name fill
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {String} color
-     * @returns {Kineitc.Shape}
-     */
-
-     /**
-     * set fill color with an object literal
-     * @name setFillRGB
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @param {Obect} color requires an object literal containing an r, g, and b component
-     * @returns {Kineitc.Shape}
+     * @returns {String}
      * @example
-     * shape.setFillRGB({<br>
-     *   r: 200,<br>
-     *   g: 50,<br>
-     *   b: 100<br>
-     * });
+     * // get fill color<br>
+     * var fill = shape.fill();<br><br>
+     *
+     * // set fill color with color string<br>
+     * shape.fill('green');<br><br>
+     *
+     * // set fill color with hex<br>
+     * shape.fill('#00ff00');<br><br>
+     *
+     * // set fill color with rgb<br>
+     * shape.fill('rgb(0,255,0)');<br><br>
+     *
+     * // set fill color with rgba and make it 50% opaque<br>
+     * shape.fill('rgba(0,255,0,0.5');
      */
 
-     /**
-     * set fill color red component
-     * @name setFillR
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillRed', 0, Kinetic.Validators.RGBComponent);
+
+    /**
+     * get/set fill red component
+     * @name fillRed
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Integer} red
-     * @returns {Kineitc.Shape}
+     * @returns {Integer}
+     * @example
+     * // get fill red component<br>
+     * var fillRed = shape.fillRed();<br><br>
+     *
+     * // set fill red component<br>
+     * shape.fillRed(0);
      */
 
-     /**
-     * set fill color green component
-     * @name setFillG
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillGreen', 0, Kinetic.Validators.RGBComponent);
+
+    /**
+     * get/set fill green component
+     * @name fillGreen
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Integer} green
-     * @returns {Kineitc.Shape}
+     * @returns {Integer}
+     * @example
+     * // get fill green component<br>
+     * var fillGreen = shape.fillGreen();<br><br>
+     *
+     * // set fill green component<br>
+     * shape.fillGreen(255);
      */
 
-     /**
-     * set fill color blue component
-     * @name setFillB
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillBlue', 0, Kinetic.Validators.RGBComponent);
+
+    /**
+     * get/set fill blue component
+     * @name fillBlue
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Integer} blue
-     * @returns {Kineitc.Shape}
+     * @returns {Integer}
+     * @example
+     * // get fill blue component<br>
+     * var fillBlue = shape.fillBlue();<br><br>
+     *
+     * // set fill blue component<br>
+     * shape.fillBlue(0);
      */
 
-     /**
-     * get fill color
-     * @name getFill
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {String}
-     */
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillAlpha', 1, Kinetic.Validators.alphaComponent);
 
-     /**
-     * get fill color as an object literal
-     * @name getFillRGB
+    /**
+     * get/set fill alpha component.  Alpha is a real number between 0 and 1.  The default
+     *  is 1.
+     * @name fillAlpha
      * @method
      * @memberof Kinetic.Shape.prototype
-     * @returns {Object}
-     */
-
-     /**
-     * get fill color red component
-     * @name getFillR
-     * @method
-     * @memberof Kinetic.Shape.prototype
+     * @param {Number} alpha
      * @returns {Number}
+     * @example
+     * // get fill alpha component<br>
+     * var fillAlpha = shape.fillAlpha();<br><br>
+     *
+     * // set fill alpha component<br>
+     * shape.fillAlpha(0.5);
      */
 
-     /**
-     * get fill color green component
-     * @name getFillG
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {Number}
-     */
-
-     /**
-     * get fill color blue component
-     * @name getFillB
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {Number}
-     */
 
     Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillPatternX', 0);
 
     /**
-     * set fill pattern x
-     * @name setFillPatternX
+     * get/set fill pattern x
+     * @name fillPatternX
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Number} x
-     * @returns {Kinetic.Shape}
-     */
-
-     /**
-     * get fill pattern x
-     * @name getFillPatternX
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Number}
+     * @example
+     * // get fill pattern x<br>
+     * var fillPatternX = shape.fillPatternX();<br><br>
+     * 
+     * // set fill pattern x<br>
+     * shape.fillPatternX(20);
      */
 
     Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillPatternY', 0);
 
     /**
-     * set fill pattern y
-     * @name setFillPatternY
+     * get/set fill pattern y
+     * @name fillPatternY
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Number} y
-     * @returns {Kinetic.Shape}
-     */
-
-     /**
-     * get fill pattern y
-     * @name getFillPatternY
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Number}
+     * @example
+     * // get fill pattern y<br>
+     * var fillPatternY = shape.fillPatternY();<br><br>
+     * 
+     * // set fill pattern y<br>
+     * shape.fillPatternY(20);
      */
 
     Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillLinearGradientColorStops');
 
     /**
-     * set fill linear gradient color stops
-     * @name setFillLinearGradientColorStops
+     * get/set fill linear gradient color stops
+     * @name fillLinearGradientColorStops
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Array} colorStops
-     * @returns {Kinetic.Shape}
-     */
-
-     /**
-     * get fill linear gradient color stops
-     * @name getFillLinearGradientColorStops
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Array} colorStops
+     * @example
+     * // get fill linear gradient color stops<br>
+     * var colorStops = shape.fillLinearGradientColorStops();<br><br>
+     *
+     * // create a linear gradient that starts with red, changes to blue <br>
+     * // halfway through, and then changes to green<br>
+     * shape.fillLinearGradientColorStops(0, 'red', 0.5, 'blue', 1, 'green');
      */
 
     Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillRadialGradientStartRadius', 0);
 
     /**
-     * set fill radial gradient start radius
-     * @name setFillRadialGradientStartRadius
+     * get/set fill radial gradient start radius
+     * @name fillRadialGradientStartRadius
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Number} radius
-     * @returns {Kinetic.Shape}
-     */
-
-     /**
-     * get fill radial gradient start radius
-     * @name getFillRadialGradientStartRadius
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Number}
+     * @example
+     * // get radial gradient start radius<br>
+     * var startRadius = shape.fillRadialGradientStartRadius();<br><br>
+     *
+     * // set radial gradient start radius<br>
+     * shape.fillRadialGradientStartRadius(0);
      */
 
     Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillRadialGradientEndRadius', 0);
 
     /**
-     * set fill radial gradient end radius
-     * @name setFillRadialGradientEndRadius
+     * get/set fill radial gradient end radius
+     * @name fillRadialGradientEndRadius
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Number} radius
-     * @returns {Kinetic.Shape}
-     */
-
-     /**
-     * get fill radial gradient end radius
-     * @name getFillRadialGradientEndRadius
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Number}
+     * @example
+     * // get radial gradient end radius<br>
+     * var endRadius = shape.fillRadialGradientEndRadius();<br><br>
+     *
+     * // set radial gradient end radius<br>
+     * shape.fillRadialGradientEndRadius(100);
      */
 
     Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillRadialGradientColorStops');
 
     /**
-     * set fill radial gradient color stops
-     * @name setFillRadialGradientColorStops
+     * get/set fill radial gradient color stops
+     * @name fillRadialGradientColorStops
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Number} colorStops
-     * @returns {Kinetic.Shape}
-     */
-
-     /**
-     * get fill radial gradient color stops
-     * @name getFillRadialGradientColorStops
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Array}
+     * @example
+     * // get fill radial gradient color stops<br>
+     * var colorStops = shape.fillRadialGradientColorStops();<br><br>
+     *
+     * // create a radial gradient that starts with red, changes to blue <br>
+     * // halfway through, and then changes to green<br>
+     * shape.fillRadialGradientColorStops(0, 'red', 0.5, 'blue', 1, 'green');
      */
 
-    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillPatternRepeat');
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillPatternRepeat', 'repeat');
 
     /**
-     * set fill pattern repeat
-     * @name setFillPatternRepeat
+     * get/set fill pattern repeat.  Can be 'repeat', 'repeat-x', 'repeat-y', or 'no-repeat'.  The default is 'repeat'
+     * @name fillPatternRepeat
      * @method
      * @memberof Kinetic.Shape.prototype
-     * @param {Number} repeat can be 'repeat', 'repeat-x', 'repeat-y', or 'no-repeat'.  The default is 'no-repeat'
-     * @returns {Kinetic.Shape}
-     */
-
-     /**
-     * get fill pattern repeat
-     * @name getFillPatternRepeat
-     * @method
-     * @memberof Kinetic.Shape.prototype
+     * @param {String} repeat
      * @returns {String}
+     * @example
+     * // get fill pattern repeat<br>
+     * var repeat = shape.fillPatternRepeat();<br><br>
+     *
+     * // repeat pattern in x direction only<br>
+     * shape.fillPatternRepeat('repeat-x');<br><br>
+     *
+     * // do not repeat the pattern<br>
+     * shape.fillPatternRepeat('no repeat');
      */
 
     Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillEnabled', true);
 
     /**
-     * set fill enabled
-     * @name setFillEnabled
+     * get/set fill enabled flag
+     * @name fillEnabled
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Boolean} enabled
-     * @returns {Kinetic.Shape}
-     */
-
-     /**
-     * get fill enabled
-     * @name getFillEnabled
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Boolean}
+     * @example
+     * // get fill enabled flag<br>
+     * var fillEnabled = shape.fillEnabled();<br><br>
+     *
+     * // disable fill<br>
+     * shape.fillEnabled(false);<br><br>
+     *
+     * // enable fill<br>
+     * shape.fillEnabled(true);
      */
 
     Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'strokeEnabled', true);
 
     /**
-     * set stroke enabled
-     * @name setStrokeEnabled
+     * get/set stroke enabled flag
+     * @name strokeEnabled
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Boolean} enabled
-     * @returns {Kinetic.Shape}
-     */
-
-     /**
-     * get stroke enabled
-     * @name getStrokeEnabled
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Boolean}
+     * @example
+     * // get stroke enabled flag<br>
+     * var strokeEnabled = shape.strokeEnabled();<br><br>
+     *
+     * // disable stroke<br>
+     * shape.strokeEnabled(false);<br><br>
+     *
+     * // enable stroke<br>
+     * shape.strokeEnabled(true);
      */
 
     Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'shadowEnabled', true);
 
     /**
-     * set shadow enabled
-     * @name setShadowEnabled
+     * get/set shadow enabled flag
+     * @name shadowEnabled
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Boolean} enabled
-     * @returns {Kinetic.Shape}
-     */
-
-     /**
-     * get shadow enabled
-     * @name getShadowEnabled
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Boolean}
+     * @example
+     * // get shadow enabled flag<br>
+     * var shadowEnabled = shape.shadowEnabled();<br><br>
+     *
+     * // disable shadow<br>
+     * shape.shadowEnabled(false);<br><br>
+     *
+     * // enable shadow<br>
+     * shape.shadowEnabled(true);
      */
 
-    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'dashArrayEnabled', true);
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'dashEnabled', true);
 
     /**
-     * set dash array enabled
-     * @name setDashArrayEnabled
+     * get/set dash enabled flag
+     * @name dashEnabled
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Boolean} enabled
-     * @returns {Kinetic.Shape}
-     */
-
-     /**
-     * get dash array enabled
-     * @name getDashArrayEnabled
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Boolean}
+     * @example
+     * // get dash enabled flag<br>
+     * var dashEnabled = shape.dashEnabled();<br><br>
+     *
+     * // disable dash<br>
+     * shape.dashEnabled(false);<br><br>
+     *
+     * // enable dash<br>
+     * shape.dashEnabled(true);
      */
 
     Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'strokeScaleEnabled', true);
 
-     /**
-     * set stroke scale enabled
-     * @name setStrokeScaleEnabled
+    /**
+     * get/set strokeScale enabled flag
+     * @name strokeScaleEnabled
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Boolean} enabled
-     * @returns {Kinetic.Shape}
-     */
-
-     /**
-     * get stroke scale enabled
-     * @name getStrokeScaleEnabled
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Boolean}
+     * @example
+     * // get stroke scale enabled flag<br>
+     * var strokeScaleEnabled = shape.strokeScaleEnabled();<br><br>
+     *
+     * // disable stroke scale<br>
+     * shape.strokeScaleEnabled(false);<br><br>
+     *
+     * // enable stroke scale<br>
+     * shape.strokeScaleEnabled(true);
      */
 
     Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillPriority', 'color');
 
     /**
-     * set fill priority
-     * @name setFillPriority
+     * get/set fill priority.  can be color, pattern, linear-gradient, or radial-gradient.  The default is color.
+     *   This is handy if you want to toggle between different fill types.
+     * @name fillPriority
      * @method
      * @memberof Kinetic.Shape.prototype
-     * @param {Number} priority can be color, pattern, linear-gradient, or radial-gradient
-     *  The default is color.
-     * @returns {Kinetic.Shape}
-     */
-
-     /**
-     * get fill priority
-     * @name getFillPriority
-     * @method
-     * @memberof Kinetic.Shape.prototype
+     * @param {String} priority
      * @returns {String}
+     * @example
+     * // get fill priority<br>
+     * var fillPriority = shape.fillPriority();<br><br>
+     *
+     * // set fill priority<br>
+     * shape.fillPriority('linear-gradient');
      */
 
-    Kinetic.Factory.addPointGetterSetter(Kinetic.Shape, 'fillPatternOffset', 0);
+    Kinetic.Factory.addComponentsGetterSetter(Kinetic.Shape, 'fillPatternOffset', ['x', 'y']);
 
     /**
-     * set fill pattern offset
-     * @name setFillPatternOffset
+     * get/set fill pattern offset
+     * @name fillPatternOffset
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Object} offset
      * @param {Number} offset.x
      * @param {Number} offset.y
-     * @returns {Kinetic.Shape}
+     * @returns {Object}
      * @example
-     * // set x and y <br>
-     * shape.setFillPatternOffset({<br>
+     * // get fill pattern offset<br>
+     * var patternOffset = shape.fillPatternOffset();<br><br>
+     *
+     * // set fill pattern offset<br>
+     * shape.fillPatternOffset({<br>
      *   x: 20<br>
-     *   y: 10
+     *   y: 10<br>
      * });
      */
 
-    /**
-     * get fill pattern offset
-     * @name getFillPatternOffset
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {Object}
-     */
 
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillPatternOffsetX', 0);
     /**
-     * set fill pattern offset x
-     * @name setFillPatternOffsetX
+     * get/set fill pattern offset x
+     * @name fillPatternOffsetX
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Number} x
-     * @returns {Kinetic.Shape}
-     */
-
-    /**
-     * get fill pattern offset x
-     * @name getFillPatternOffsetX
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Number}
+     * @example
+     * // get fill pattern offset x<br>
+     * var patternOffsetX = shape.fillPatternOffsetX();<br><br>
+     *
+     * // set fill pattern offset x<br>
+     * shape.fillPatternOffsetX(20);
      */
 
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillPatternOffsetY', 0);
     /**
-     * set fill pattern offset y
-     * @name setFillPatternOffsetY
+     * get/set fill pattern offset y
+     * @name fillPatternOffsetY
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Number} y
-     * @returns {Kinetic.Shape}
-     */
-
-    /**
-     * get fill pattern offset y
-     * @name getFillPatternOffsetY
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Number}
+     * @example
+     * // get fill pattern offset y<br>
+     * var patternOffsetY = shape.fillPatternOffsetY();<br><br>
+     *
+     * // set fill pattern offset y<br>
+     * shape.fillPatternOffsetY(10);
      */
 
-    Kinetic.Factory.addPointGetterSetter(Kinetic.Shape, 'fillPatternScale', 1);
+    Kinetic.Factory.addComponentsGetterSetter(Kinetic.Shape, 'fillPatternScale', ['x', 'y']);
 
     /**
-     * set fill pattern scale
-     * @name setFillPatternScale
+     * get/set fill pattern scale
+     * @name fillPatternScale
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Object} scale
      * @param {Number} scale.x
      * @param {Number} scale.y
-     * @returns {Kinetic.Shape}
+     * @returns {Object}
      * @example
-     * // set x and y <br>
-     * shape.setFillPatternScale({<br>
-     *   x: 20<br>
-     *   y: 10
+     * // get fill pattern scale<br>
+     * var patternScale = shape.fillPatternScale();<br><br>
+     *
+     * // set fill pattern scale<br>
+     * shape.fillPatternScale({<br>
+     *   x: 2<br>
+     *   y: 2<br>
      * });
      */
 
-    /**
-     * get fill pattern scale
-     * @name getFillPatternScale
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {Object}
-     */
 
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillPatternScaleX', 1);
     /**
-     * set fill pattern scale x
-     * @name setFillPatternScaleX
+     * get/set fill pattern scale x
+     * @name fillPatternScaleX
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Number} x
-     * @returns {Kinetic.Shape}
-     */
-
-    /**
-     * get fill pattern scale x
-     * @name getFillPatternScaleX
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Number}
+     * @example
+     * // get fill pattern scale x<br>
+     * var patternScaleX = shape.fillPatternScaleX();<br><br>
+     *
+     * // set fill pattern scale x<br>
+     * shape.fillPatternScaleX(2);
      */
 
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillPatternScaleY', 1);
     /**
-     * set fill pattern scale y
-     * @name setFillPatternScaleY
+     * get/set fill pattern scale y
+     * @name fillPatternScaleY
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Number} y
-     * @returns {Kinetic.Shape}
-     */
-
-    /**
-     * get fill pattern scale y
-     * @name getFillPatternScaleY
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Number}
+     * @example
+     * // get fill pattern scale y<br>
+     * var patternScaleY = shape.fillPatternScaleY();<br><br>
+     *
+     * // set fill pattern scale y<br>
+     * shape.fillPatternScaleY(2);
      */
 
-    Kinetic.Factory.addPointGetterSetter(Kinetic.Shape, 'fillLinearGradientStartPoint', 0);
+    Kinetic.Factory.addComponentsGetterSetter(Kinetic.Shape, 'fillLinearGradientStartPoint', ['x', 'y']);
 
     /**
-     * set fill linear gradient start point
-     * @name setFillLinearGradientStartPoint
+     * get/set fill linear gradient start point
+     * @name fillLinearGradientStartPoint
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Object} startPoint
      * @param {Number} startPoint.x
      * @param {Number} startPoint.y
-     * @returns {Kinetic.Shape}
+     * @returns {Object}
      * @example
-     * // set x and y <br>
-     * shape.setFillLinearGradientStartPoint({<br>
+     * // get fill linear gradient start point<br>
+     * var startPoint = shape.fillLinearGradientStartPoint();<br><br>
+     *
+     * // set fill linear gradient start point<br>
+     * shape.fillLinearGradientStartPoint({<br>
      *   x: 20<br>
-     *   y: 10
+     *   y: 10<br>
      * });
      */
 
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillLinearGradientStartPointX', 0);
     /**
-     * get fill linear gradient start point
-     * @name getFillLinearGradientStartPoint
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {Object}
-     */
-
-    /**
-     * set fill linear gradient start point x
-     * @name setFillLinearGradientStartPointX
+     * get/set fill linear gradient start point x
+     * @name fillLinearGradientStartPointX
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Number} x
-     * @returns {Kinetic.Shape}
-     */
-
-    /**
-     * get fill linear gradient start point x
-     * @name getFillLinearGradientStartPointX
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Number}
-     */
-
-    /**
-     * set fill linear gradient start point y
-     * @name setFillLinearGradientStartPointY
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @param {Number} y
-     * @returns {Kinetic.Shape}
-     */
-
-    /**
-     * get fill linear gradient start point y
-     * @name getFillLinearGradientStartPointY
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {Number}
-     */
-
-    Kinetic.Factory.addPointGetterSetter(Kinetic.Shape, 'fillLinearGradientEndPoint', 0);
-
-    /**
-     * set fill linear gradient end point
-     * @name setFillLinearGradientEndPoint
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @param {Object} endPoint
-     * @returns {Kinetic.Shape}
      * @example
-     * // set x only <br>
-     * shape.setFillLinearGradientEndPoint({<br>
-     *   x: 20<br>
-     *   y: 10
-     * });
+     * // get fill linear gradient start point x<br>
+     * var startPointX = shape.fillLinearGradientStartPointX();<br><br>
+     *
+     * // set fill linear gradient start point x<br>
+     * shape.fillLinearGradientStartPointX(20);
      */
 
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillLinearGradientStartPointY', 0);
     /**
-     * get fill linear gradient end point
-     * @name getFillLinearGradientEndPoint
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {Object}
-     */
-
-    /**
-     * set fill linear gradient end point x
-     * @name setFillLinearGradientEndPointX
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @param {Number} x
-     * @returns {Kinetic.Shape}
-     */
-
-    /**
-     * get fill linear gradient end point x
-     * @name getFillLinearGradientEndPointX
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {Number}
-     */
-
-    /**
-     * set fill linear gradient end point y
-     * @name setFillLinearGradientEndPointY
+     * get/set fill linear gradient start point y
+     * @name fillLinearGradientStartPointY
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Number} y
-     * @returns {Kinetic.Shape}
-     */
-
-    /**
-     * get fill linear gradient end point y
-     * @name getFillLinearGradientEndPointY
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Number}
-     */
-
-    Kinetic.Factory.addPointGetterSetter(Kinetic.Shape, 'fillRadialGradientStartPoint', 0);
-
-    /**
-     * set fill radial gradient start point
-     * @name setFillRadialGradientStartPoint
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @param {Object} startPoint
-     * @param {Number} startPoint.x
-     * @param {Number} startPoint.y
-     * @returns {Kinetic.Shape}
      * @example
-     * // set x and y <br>
-     * shape.setFillRadialGradientStartPoint({<br>
-     *   x: 20<br>
-     *   y: 10
-     * });
+     * // get fill linear gradient start point y<br>
+     * var startPointY = shape.fillLinearGradientStartPointY();<br><br>
+     *
+     * // set fill linear gradient start point y<br>
+     * shape.fillLinearGradientStartPointY(20);
      */
 
-    /**
-     * get fill radial gradient start point
-     * @name getFillRadialGradientStartPoint
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {Object}
-     */
+    Kinetic.Factory.addComponentsGetterSetter(Kinetic.Shape, 'fillLinearGradientEndPoint', ['x', 'y']);
 
     /**
-     * set fill radial gradient start point x
-     * @name setFillRadialGradientStartPointX
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @param {Number} x
-     * @returns {Kinetic.Shape}
-     */
-
-    /**
-     * get fill radial gradient start point x
-     * @name getFillRadialGradientStartPointX
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {Number}
-     */
-
-    /**
-     * set fill radial gradient start point y
-     * @name setFillRadialGradientStartPointY
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @param {Number} y
-     * @returns {Kinetic.Shape}
-     */
-
-    /**
-     * get fill radial gradient start point y
-     * @name getFillRadialGradientStartPointY
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {Number}
-     */
-
-    Kinetic.Factory.addPointGetterSetter(Kinetic.Shape, 'fillRadialGradientEndPoint', 0);
-
-    /**
-     * set fill radial gradient end point
-     * @name setFillRadialGradientEndPoint
+     * get/set fill linear gradient end point
+     * @name fillLinearGradientEndPoint
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Object} endPoint
      * @param {Number} endPoint.x
      * @param {Number} endPoint.y
-     * @returns {Kinetic.Shape}
+     * @returns {Object}
      * @example
-     * // set x and y <br>
-     * shape.setFillRadialGradientEndPoint({<br>
+     * // get fill linear gradient end point<br>
+     * var endPoint = shape.fillLinearGradientEndPoint();<br><br>
+     *
+     * // set fill linear gradient end point<br>
+     * shape.fillLinearGradientEndPoint({<br>
      *   x: 20<br>
-     *   y: 10
+     *   y: 10<br>
      * });
      */
 
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillLinearGradientEndPointX', 0);
     /**
-     * get fill radial gradient end point
-     * @name getFillRadialGradientEndPoint
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {Object}
-     */
-
-     /**
-     * set fill radial gradient end point x
-     * @name setFillRadialGradientEndPointX
+     * get/set fill linear gradient end point x
+     * @name fillLinearGradientEndPointX
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Number} x
-     * @returns {Kinetic.Shape}
-     */
-
-    /**
-     * get fill radial gradient end point x
-     * @name getFillRadialGradientEndPointX
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Number}
+     * @example
+     * // get fill linear gradient end point x<br>
+     * var endPointX = shape.fillLinearGradientEndPointX();<br><br>
+     *
+     * // set fill linear gradient end point x<br>
+     * shape.fillLinearGradientEndPointX(20);
      */
 
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillLinearGradientEndPointY', 0);
     /**
-     * set fill radial gradient end point y
-     * @name setFillRadialGradientEndPointY
+     * get/set fill linear gradient end point y
+     * @name fillLinearGradientEndPointY
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Number} y
-     * @returns {Kinetic.Shape}
-     */ 
-     
-    /**
-     * get fill radial gradient end point y
-     * @name getFillRadialGradientEndPointY
-     * @method
-     * @memberof Kinetic.Shape.prototype
      * @returns {Number}
+     * @example
+     * // get fill linear gradient end point y<br>
+     * var endPointY = shape.fillLinearGradientEndPointY();<br><br>
+     *
+     * // set fill linear gradient end point y<br>
+     * shape.fillLinearGradientEndPointY(20);
      */
 
-    Kinetic.Factory.addRotationGetterSetter(Kinetic.Shape, 'fillPatternRotation', 0);
+    Kinetic.Factory.addComponentsGetterSetter(Kinetic.Shape, 'fillRadialGradientStartPoint', ['x', 'y']);
 
     /**
-     * set fill pattern rotation in radians
-     * @name setFillPatternRotation
+     * get/set fill radial gradient start point
+     * @name fillRadialGradientStartPoint
+     * @method
+     * @memberof Kinetic.Shape.prototype
+     * @param {Object} startPoint
+     * @param {Number} startPoint.x
+     * @param {Number} startPoint.y
+     * @returns {Object}
+     * @example
+     * // get fill radial gradient start point<br>
+     * var startPoint = shape.fillRadialGradientStartPoint();<br><br>
+     *
+     * // set fill radial gradient start point<br>
+     * shape.fillRadialGradientStartPoint({<br>
+     *   x: 20<br>
+     *   y: 10<br>
+     * });
+     */
+
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillRadialGradientStartPointX', 0);
+    /**
+     * get/set fill radial gradient start point x
+     * @name fillRadialGradientStartPointX
+     * @method
+     * @memberof Kinetic.Shape.prototype
+     * @param {Number} x
+     * @returns {Number}
+     * @example
+     * // get fill radial gradient start point x<br>
+     * var startPointX = shape.fillRadialGradientStartPointX();<br><br>
+     *
+     * // set fill radial gradient start point x<br>
+     * shape.fillRadialGradientStartPointX(20);
+     */
+
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillRadialGradientStartPointY', 0);
+    /**
+     * get/set fill radial gradient start point y
+     * @name fillRadialGradientStartPointY
+     * @method
+     * @memberof Kinetic.Shape.prototype
+     * @param {Number} y
+     * @returns {Number}
+     * @example
+     * // get fill radial gradient start point y<br>
+     * var startPointY = shape.fillRadialGradientStartPointY();<br><br>
+     *
+     * // set fill radial gradient start point y<br>
+     * shape.fillRadialGradientStartPointY(20);
+     */
+
+    Kinetic.Factory.addComponentsGetterSetter(Kinetic.Shape, 'fillRadialGradientEndPoint', ['x', 'y']);
+
+    /**
+     * get/set fill radial gradient end point
+     * @name fillRadialGradientEndPoint
+     * @method
+     * @memberof Kinetic.Shape.prototype
+     * @param {Object} endPoint
+     * @param {Number} endPoint.x
+     * @param {Number} endPoint.y
+     * @returns {Object}
+     * @example
+     * // get fill radial gradient end point<br>
+     * var endPoint = shape.fillRadialGradientEndPoint();<br><br>
+     *
+     * // set fill radial gradient end point<br>
+     * shape.fillRadialGradientEndPoint({<br>
+     *   x: 20<br>
+     *   y: 10<br>
+     * });
+     */
+
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillRadialGradientEndPointX', 0);
+    /**
+     * get/set fill radial gradient end point x
+     * @name fillRadialGradientEndPointX
+     * @method
+     * @memberof Kinetic.Shape.prototype
+     * @param {Number} x
+     * @returns {Number}
+     * @example
+     * // get fill radial gradient end point x<br>
+     * var endPointX = shape.fillRadialGradientEndPointX();<br><br>
+     *
+     * // set fill radial gradient end point x<br>
+     * shape.fillRadialGradientEndPointX(20);
+     */
+
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillRadialGradientEndPointY', 0);
+    /**
+     * get/set fill radial gradient end point y
+     * @name fillRadialGradientEndPointY
+     * @method
+     * @memberof Kinetic.Shape.prototype
+     * @param {Number} y
+     * @returns {Number}
+     * @example
+     * // get fill radial gradient end point y<br>
+     * var endPointY = shape.fillRadialGradientEndPointY();<br><br>
+     *
+     * // set fill radial gradient end point y<br>
+     * shape.fillRadialGradientEndPointY(20);
+     */
+
+    Kinetic.Factory.addGetterSetter(Kinetic.Shape, 'fillPatternRotation', 0);
+
+    /**
+     * get/set fill pattern rotation in degrees
+     * @name fillPatternRotation
      * @method
      * @memberof Kinetic.Shape.prototype
      * @param {Number} rotation
      * @returns {Kinetic.Shape}
+     * @example
+     * // get fill pattern rotation<br>
+     * var patternRotation = shape.fillPatternRotation();<br><br>
+     *
+     * // set fill pattern rotation<br>
+     * shape.fillPatternRotation(20);
      */
 
-    /**
-     * set fill pattern rotation in degrees
-     * @name setFillPatternRotationDeg
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @param {Number} rotationDeg
-     * @returns {Kinetic.Shape}
-     */
 
-    /**
-     * get fill pattern rotation in radians
-     * @name getFillPatternRotation
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {Number}
-     */
+    Kinetic.Factory.backCompat(Kinetic.Shape, {
+        dashArray: 'dash',
+        getDashArray: 'getDash',
+        setDashArray: 'getDash',
 
-    /**
-     * get fill pattern rotation in degrees
-     * @name getFillPatternRotationDeg
-     * @method
-     * @memberof Kinetic.Shape.prototype
-     * @returns {Number}
-     */
+        drawFunc: 'sceneFunc',
+        getDrawFunc: 'getSceneFunc',
+        setDrawFunc: 'setSceneFunc',
 
+        drawHitFunc: 'hitFunc',
+        getDrawHitFunc: 'getHitFunc',
+        setDrawHitFunc: 'setHitFunc'
+    });
+
+    Kinetic.Collection.mapMethods(Kinetic.Shape);
 })();

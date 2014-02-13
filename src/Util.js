@@ -64,24 +64,25 @@
         return collection;
     };
 
-    Kinetic.Collection.mapMethods = function(arr) {
-        var leng = arr.length,
-            n;
+    Kinetic.Collection.mapMethods = function(constructor) {
+        var prot = constructor.prototype,
+            key;
 
-        for(n = 0; n < leng; n++) {
+        for(key in prot) {
             // induce scope
-            (function(i) {
-                var method = arr[i];
-                Kinetic.Collection.prototype[method] = function() {
+            (function(methodName) {
+                Kinetic.Collection.prototype[methodName] = function() {
                     var len = this.length,
                         i;
 
                     args = [].slice.call(arguments);
                     for(i = 0; i < len; i++) {
-                        this[i][method].apply(this[i], args);
+                        this[i][methodName].apply(this[i], args);
                     }
+
+                    return this;
                 };
-            })(n);
+            })(key);
         }
     };
 
@@ -397,6 +398,24 @@
             else {
                 callback(null);
             }
+        },
+        _getRGBAString: function(obj) {
+            var red = obj.red || 0,
+                green = obj.green || 0,
+                blue = obj.blue || 0,
+                alpha = obj.alpha || 1;
+
+            return [
+                'rgba(',
+                red,
+                ',',
+                green,
+                ',',
+                blue,
+                ',',
+                alpha,
+                ')'
+            ].join(EMPTY_STRING);
         },
         _rgbToHex: function(r, g, b) {
             return ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
